@@ -1,0 +1,447 @@
+﻿<html>
+<head>
+<title>阴阳师伤害计算1</title>
+<!--要加这一句编码否则中文会乱码-->
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+ <!--<script src="webtest.js" type="text/javascript"></script>-->
+<style> 
+	span{
+		display:inline-block;
+		width:80px;
+	}
+	.text{
+		display:inline-block;
+		width:80px;
+	}
+	select{
+		display:inline-block;
+		width:80px;
+	}
+	</style>
+
+<script type="text/javascript">
+	var shikigami={ 		
+			"Huang":{
+				"attack_basic":"3323",
+				"hit_rate":"1.2",
+				"hit_time":"8",
+				"hit_reduce":"true",
+				"reduce_rate":"0.25",
+					},
+			"YaoDaoJi":{
+				"attack_basic":"3260",
+				"hit_rate":"0.6",
+				"hit_time":"6",
+				"hit_reduce":"false",
+				"reduce_rate":"0",
+			},
+			"ErKouNv":{
+				"attack_basic":"2626",
+				"hit_rate":"0.63",
+				"hit_time":"8",
+				"hit_reduce":"false",
+				"reduce_rate":"0",
+			}
+		}
+		
+	var mitama={
+			"ZhenNv1":{
+				"mitama_effect":"Wu",//针女暂时不参与计算
+				"attack_add_number":"442",
+				"attack_add_rate":"1.466",
+				"hit_crit":"180",
+			}
+		}
+		
+	function Shikigami_set(){
+		if(document.getElementById("shikigami_rare").value=="ALL")
+			var name = document.getElementById("shikigami_all").value;
+		if(document.getElementById("shikigami_rare").value=="SSR")
+			var name = document.getElementById("shikigami_ssr").value;	
+		if(document.getElementById("shikigami_rare").value=="SR")
+			var name = document.getElementById("shikigami_sr").value;	
+		if(document.getElementById("shikigami_rare").value=="R")
+			var name = document.getElementById("shikigami_r").value;	
+		document.getElementById("attack_basic").value=shikigami[name]["attack_basic"];
+		document.getElementById("hit_rate").value=shikigami[name]["hit_rate"];
+		document.getElementById("hit_time").value=shikigami[name]["hit_time"];
+		document.getElementById("hit_reduce").checked=shikigami[name]["hit_reduce"];
+		Check_hit_reduce();
+		document.getElementById("reduce_rate").value=shikigami[name]["reduce_rate"];
+		window.alert("式神数据填入完成");
+	}
+	
+	function Mitama_set(){
+		var m_name = document.getElementById("mitama_select").value;
+		if(document.getElementById("shikigami_rare").value=="ALL")
+			var s_name = document.getElementById("shikigami_all").value;
+		if(document.getElementById("shikigami_rare").value=="SSR")
+			var s_name = document.getElementById("shikigami_ssr").value;	
+		if(document.getElementById("shikigami_rare").value=="SR")
+			var s_name = document.getElementById("shikigami_sr").value;	
+		if(document.getElementById("shikigami_rare").value=="R")
+			var s_name = document.getElementById("shikigami_r").value;	
+		var number = Math.ceil(shikigami[s_name]["attack_basic"] * mitama[m_name]["attack_add_rate"]);
+		number += parseInt(mitama[m_name]["attack_add_number"]);
+		document.getElementById("attack_add").value= number;
+		document.getElementById("crit_check").checked="true";
+		Check_crit();//暂时默认暴击		
+		document.getElementById("hit_crit").value=mitama[m_name]["hit_crit"];
+		window.alert("御魂数据填入完成");
+	}
+
+ 	function Count(hit_time,hit_rate){
+		//次位不同 伤害不同（考虑递减效果 总输出为每次输出总和）
+  		var attack_basic = parseInt(document.getElementById("attack_basic").value);
+  		var attack_add = parseInt(document.getElementById("attack_add").value);		
+		//var hit_rate = parseFloat(document.getElementById("hit_rate").value);
+		var hit_crit = Check_crit();//检测是否勾选暴击，勾选后计算暴击伤害
+		var final_hit = 0;		
+		var reduce_rate =0;
+		
+		for(var x=0;x<hit_time;x++){
+			reduce_rate = Math.pow(1-(parseFloat(document.getElementById("reduce_rate").value)),x);
+		}//递减率
+				
+		var mitama_effect = 1;
+		switch (document.getElementById("mitama_effect").value){//御魂效果
+			case "Wu":
+				mitama_effect = 1;
+				break;
+			case "PoShi":
+				mitama_effect = 1.4;
+				break;
+			case "WangQie":
+				deffence_number = deffence_number*0.8;
+				break;
+			case "XinYan":
+				mitama_effect = 1.5;
+				break;
+			default:
+				break;
+		}
+		var buff_effect =1;
+		switch (document.getElementById("buff_effect").value){//buff效果
+			case "Wu":
+				buff_effect =1;
+				break;
+			case "YanLingXing":
+				buff_effect =1.3;
+				break;
+			case "MiShuBaoYan":
+				hit_crit = hit_crit+0.3;
+				break;
+			case "TongLingJiFeng":
+				buff_effect =1.3;
+				break;
+			case "TuZiWu":
+				buff_effect =1.25;
+				break;
+			case "XiongDiZhiBan":
+				buff_effect =1.25;
+				break;
+			default:
+				break;
+		}
+		var debuff_effect =1;
+		switch (document.getElementById("debuff_effect").value){//debuff效果
+			case "Wu":
+				debuff_effect =1;
+				break;
+			case "FuZhouMie":
+				debuff_effect =1.3;
+				break;
+			case "YanLingFu":
+				debuff_effect =1.4;
+				break;
+			case "QianJiZhengYi":
+				debuff_effect =1.2;
+				break;		
+			default:
+				break;
+		}
+		
+		var deffence_number = Check_deffence();//计算防御
+		
+		final_hit = (attack_basic + attack_add)*hit_rate*reduce_rate*hit_crit*deffence_number*mitama_effect*buff_effect*debuff_effect;//输出公式
+		
+		if(document.getElementById("TiaoXin").checked==true){
+			final_hit = final_hit*1.4;
+		}
+		if(document.getElementById("PoShiChouNv").checked==true){
+			final_hit = final_hit*1.4;
+		}
+		if(document.getElementById("XinYanChouNv").checked==true){
+			final_hit = final_hit*1.5;
+		}//可叠加buff
+		
+		return Math.ceil(final_hit);
+		
+  }
+	
+	function Check_hit_detail(){
+		//暂未编写，只做显示隐藏功能
+		document.getElementById("hit_time2").value="0";
+		document.getElementById("hit_rate2").value="0";
+		if(document.getElementById("hit_detail").checked==true){
+				document.getElementById("div_hit_rate2").style.display="block";
+			}
+		if(document.getElementById("hit_detail").checked==false){
+				document.getElementById("div_hit_rate2").style.display="none";
+			}	
+  	}
+	
+	function Check_hit_reduce(){
+		//伤害递减的显示勾选
+		document.getElementById("reduce_rate").value="0";
+		if(document.getElementById("hit_reduce").checked==true){
+			document.getElementById("div_hit_reduce").style.display="block";
+		}
+		if(document.getElementById("hit_reduce").checked==false){
+			document.getElementById("div_hit_reduce").style.display="none";
+			
+		}	
+	}
+	
+	function Check_crit(){
+		var hit_crit=100;//x0.01后为1 参与计算不影响结果
+		if(document.getElementById("crit_check").checked==true){
+			hit_crit = parseInt(document.getElementById("hit_crit").value);
+		}
+		return 0.01*hit_crit;
+	}
+	
+	function Check_deffence(){
+		var deffence_number=0;
+		if(document.getElementById("deffence_check").checked==true){
+			deffence_number = parseInt(document.getElementById("deffence_number").value);
+			if(document.getElementById("mitama_effect").value=="WangQie")
+				deffence_number = deffence_number*0.8;
+			if(document.getElementById("XinYanChouNv").checked==true)
+				deffence_number = deffence_number*0.5;
+			if(document.getElementById("PoShiChouNv").checked==true)
+				deffence_number = deffence_number*0.5;
+ 		}
+		return 300/(300+deffence_number);
+	}
+	
+	function Select_rare(){
+		
+		//document.getElementById("shikigami_rare").value="ALL";
+		if(document.getElementById("shikigami_rare").value=="ALL"){
+			document.getElementById("shikigami_all").style.display="inline";
+			document.getElementById("shikigami_ssr").style.display="none";
+			document.getElementById("shikigami_sr").style.display="none";
+			document.getElementById("shikigami_r").style.display="none";
+		}
+		if(document.getElementById("shikigami_rare").value=="SSR"){
+			document.getElementById("shikigami_all").style.display="none";
+			document.getElementById("shikigami_ssr").style.display="inline";
+			document.getElementById("shikigami_sr").style.display="none";
+			document.getElementById("shikigami_r").style.display="none";
+		}
+		if(document.getElementById("shikigami_rare").value=="SR"){
+			document.getElementById("shikigami_all").style.display="none";
+			document.getElementById("shikigami_ssr").style.display="none";
+			document.getElementById("shikigami_sr").style.display="inline";
+			document.getElementById("shikigami_r").style.display="none";
+		}
+		if(document.getElementById("shikigami_rare").value=="R"){
+			document.getElementById("shikigami_all").style.display="none";
+			document.getElementById("shikigami_ssr").style.display="none";
+			document.getElementById("shikigami_sr").style.display="none";
+			document.getElementById("shikigami_r").style.display="inline";
+		}
+	
+	}
+	
+	function input_check(){
+		//Count();为每个输入框设置默认值之后 ，暂时搁置输入检测
+		if(document.getElementById("attack_basic").value=="")
+			window.alert("请输入基础攻击数值");
+		if(parseInt(document.getElementById("attack_basic").value)<0||parseInt(document.getElementById("attack_basic").value)>4000)
+			window.alert("请核对基础攻击数值");
+			
+		/*if(document.getElementById("attack_add").value=="")
+			window.alert("请输入面板加成数值");*/
+		if(parseInt(document.getElementById("attack_add").value)<0||parseInt(document.getElementById("attack_add").value)>10000)
+			window.alert("请核对面板加成数值");			
+	}
+	
+	function Output(){
+		var string = "";
+		var sum = 0;
+		var row = new Array(2);
+		row[0] = 0;
+		row[1] = parseInt(document.getElementById("hit_time").value);
+		row[2] = parseInt(document.getElementById("hit_time2").value);
+		rowall = row[1]+row[2];
+		var rate = new Array(2);
+		rate[0] = 0;
+		rate[1] = parseFloat(document.getElementById("hit_rate").value);
+		rate[2] = parseFloat(document.getElementById("hit_rate2").value);
+		
+		string += "段数";
+		string += "&nbsp;&nbsp;&nbsp;&nbsp;";
+		string += "伤害";
+		string +="<br><br>";
+		for(var y =1;y<=2;y++ )
+			{			
+				for(var x=1;x<=row[y];x++){
+					//string += "第";
+					string += "&nbsp;";
+					if(y==1)
+						string += x;
+					if(y==2)
+						string += x+row[1];
+					string +="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+					string += Count(x,rate[y]);
+					string +="<br><br>";
+					sum +=Count(x,rate[y]);
+				}
+				if(row[2]==0)
+				break;
+			}
+			string += "共";
+			string += rowall;
+			string +="段";
+			string +="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+			string +="总伤害为";
+			string +="&nbsp;";
+			string +=sum;
+			string +="<br><br>";
+		
+		document.getElementById("div_output").innerHTML = string;		
+	}
+	
+	</script>
+<!--<link href="webtest.css" rel="stylesheet" type="text/css">
+<style type="text/css"></style>-->
+<!--引用外部css-->
+</head>
+
+<body>
+ <div id="div_atack&hit">
+  	<span>基础攻击</span>
+  	<input class = "text" id="attack_basic" value="0"/>
+  	<span>面板加成</span>
+  	<input class = "text" id="attack_add" value="0"/><br><br>
+  
+  	<span>伤害系数</span>
+  	<input class = "text" id="hit_rate" value="1"/>
+  	<span>伤害次数</span>
+  	<input class = "text" id="hit_time" value="1"/> 
+
+	<input class = "checkbox" type="checkbox" id="hit_detail" onChange="Check_hit_detail()">详细伤害(暂无)</input>
+  	<input class = "checkbox" type="checkbox" id="hit_reduce" onChange="Check_hit_reduce()">伤害递减</input><br><br>
+  </div>
+  	
+  <div id="div_hit_rate2" style="display:none">
+  	<span>伤害系数2</span>
+  	<input class = "text" id="hit_rate2" value="0"/>
+  	<span>伤害次数2</span>
+  	<input class = "text" id="hit_time2" value="0"/><br><br>
+  </div>
+  
+  <div id="div_hit_reduce" style="display:none">
+  	<span>递减比例</span>
+  	<input class="text" id="reduce_rate" value="0"/><br><br>
+  </div>
+  	
+  <div id="div_crit*deffence">
+  	<span>暴击伤害</span>
+  	<input class="text" id="hit_crit"  value="150"/>
+  	<input type="checkbox" id="crit_check">暴击</input><br><br>
+  	
+  
+  	<span>敌方防御</span> 
+  	<input class="text" id="deffence_number"  value="0"/>
+  	<input class = "checkbox" type="checkbox" id="deffence_check">计算防御</input><br><br>
+  </div>
+  
+  <div id="div_mimata&buff&debuff">
+  	<span>御魂效果</span>
+  	<select id="mitama_effect">
+  		<option value="PoShi">破势</option>
+  		<option value="XinYan">心眼</option>
+  		<option value="WangQie">网切</option>
+  		<option value="Wu" selected="selected">无</option>
+  	</select><br><br>
+ 
+  	<span>BUFF</span>
+  	<select id="buff_effect">
+  		<option value="YanLingXing">言灵.星</option>
+  		<option value="MiShuBaoYan">秘术.豹眼</option>
+  		<option value="TongLingJiFeng">通灵.疾风</option>
+  		<option value="TuZiWu">兔子舞</option>
+  		<option value="XiongDiZhiBan">兄弟之绊</option>
+  		<option value="Wu" selected="selected">无</option>
+  	</select><br><br>
+ 
+  	<span>DEBUFF</span>
+  		<select id="debuff_effect">
+  		<option value="FuZhouMie">符咒.灭</option>
+  		<option value="YanLingFu">言灵.缚</option>
+  		<option value="QianJiZhengYi">钱即正义</option>
+  		<option value="Wu" selected="selected">无</option>
+  	</select><br><br>
+  </div>
+  
+  <div id="check_box">  
+    <input class = "checkbox" type="checkbox" id="TiaoXin">天邪鬼赤</input>
+    <input class = "checkbox" type="checkbox" id="PoShiChouNv">破势丑女</input>
+    <input class = "checkbox" type="checkbox" id="XinYanChouNv">心眼丑女</input>
+    <br><br>
+  </div>
+  
+  <div id="shikigami*mitama"> 
+    <span>稀有度</span>
+  	<select id="shikigami_rare" onChange="Select_rare()">
+  		<option value="SSR">SSR</option>
+  		<option value="SR">SR</option>
+  		<option value="R">R</option>
+  		<option value="N">N</option>
+  		<option value="ALL" selected="selected">全部</option>
+	</select>
+  
+   	<span>式神</span>
+   	<select id="shikigami_all">
+  		<option value="Huang">荒</option>
+  		<option value="YaoDaoJi">妖刀</option>
+  		<option value="ErKouNv">二口女</option>
+  		<option value="SanWeiHu">三尾狐</option>
+  		<option value="Wu"  selected="selected">无</option>
+	</select>
+   
+  	<select id="shikigami_ssr" style="display:none">
+  		<option value="Huang">荒</option>
+  		<option value="YaoDaoJi">妖刀</option>
+  		<option value="Wu" selected="selected">无</option>
+	</select>
+	
+  	<select id="shikigami_sr" style="display:none">
+  		<option value="ErKouNv">二口女</option>
+  		<option value="Wu" selected="selected">无</option>
+	</select>
+	
+  	<select id="shikigami_r" style="display:none">
+  		<option value="SanWeiHu">三尾狐</option>
+  		<option value="Wu" selected="selected">无</option>
+	</select>
+    
+  <button id = "btnShikigami" onclick="Shikigami_set()"> 填入式神数值 </button><br><br>
+  
+  <span>选择御魂</span>
+  	<select id="mitama_select">
+  		<option value="ZhenNv1" selected="selected">针女</option>
+ 	 	<option value="Wu" >无</option>
+  	</select>
+  
+  <button id = "btnMitama" onclick="Mitama_set()"> 填入御魂数值 </button><br><br>
+ </div>
+  
+  <button id = "btnOutput" onclick="Output()"> 输出计算 </button><br><br>
+  
+  <div id="div_output"></div><!--输出显示的位置-->
+</body>
+</html>
